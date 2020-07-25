@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Categories;
 use Illuminate\Http\Request;
 use App\Http\Requests\StoreCategoryRequest;
+use Validator;
 
 class CategoryController extends Controller
 {
@@ -39,16 +40,19 @@ class CategoryController extends Controller
     {
         Categories::create([
             'name' =>$request->name,
+            'slug'=>utf8tourl($request->name),
+            'status'=>$request->status,
         ]);
+        return redirect()->route('category.index');
     }
 
     /**
      * Display the specified resource.
      *
-     * @param  \App\Category  $category
+     * @param  $id
      * @return \Illuminate\Http\Response
      */
-    public function show(Category $category)
+    public function show($id)
     {
         //
     }
@@ -56,34 +60,56 @@ class CategoryController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  \App\Category  $category
+     * @param $id
      * @return \Illuminate\Http\Response
      */
-    public function edit(Category $category)
+    public function edit($id)
     {
-        //
+        $category = Categories::find($id);
+        return response()->json($category,200);
     }
 
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  $id
      * @param  \App\Category  $category
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Category $category)
+    public function update(Request $request, $id)
     {
-        //
+        $validator = Validator::make($request->all(),
+                [
+                    'name'=>'required|min:2|max:255'
+                ],
+                [
+                    'required'=>'name need to be fill',
+                    'min'=>'name must be 2-255 char',
+                    'max'=>'name must be 2-255 char',
+                ]
+            );
+            if($validator->fails()){
+                return response()->json(['errors' => 'true','message' => $validator->errors()],200);
+            };
+            $category = Categories::find($id);
+            $category->update([
+                'name' =>$request->name,
+                'slug'=>utf8tourl($request->name),
+                'status'=>$request->status,
+            ]);
+            return response()->json(['success' => 'edit category successfully','data'=>$category]);
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Category  $category
+     * @param  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Category $category)
+    public function destroy($id)
     {
-        //
+        $category = Categories::find($id);
+        $category->delete();
+        return reponse()->json(['success'=>'delete category successfully']);
     }
 }
